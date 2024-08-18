@@ -1,0 +1,5 @@
+{
+    "arduino.useArduinoCli": true,
+    "C_Cpp.intelliSenseEngine": "Tag Parser",
+    "editor.formatOnSave": true,
+}
