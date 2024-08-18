@@ -34,9 +34,16 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _getUsbDevices();
     flutterTts.setLanguage("ja-JP");
     flutterTts.setSpeechRate(0.4);
+
+    // デバイスの接続を監視
+    UsbSerial.usbEventStream?.listen((UsbEvent event) {
+      if (event.event == UsbEvent.ACTION_USB_ATTACHED ||
+          event.event == UsbEvent.ACTION_USB_DETACHED) {
+        _getUsbDevices();
+      }
+    });
   }
 
   Future<void> _getUsbDevices() async {
