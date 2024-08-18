@@ -146,9 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('USBデータ受信'),
-      ),
+      backgroundColor: Colors.black,
       body: Center(
         child: _message.isEmpty
             ? Column(
@@ -157,16 +155,16 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: <Widget>[
                     Text(
                       formatDuration(_time),
-                      style: TextStyle(fontSize: 144),
+                      style: TextStyle(fontSize: 144, color: Colors.white),
                     ),
                     Text(
                       "distance: $_distance cm",
-                      style: TextStyle(fontSize: 24),
+                      style: TextStyle(fontSize: 24, color: Colors.white),
                     ),
                   ])
             : Text(
                 _message,
-                style: TextStyle(fontSize: 24),
+                style: TextStyle(fontSize: 24, color: Colors.white),
               ),
       ),
     );
