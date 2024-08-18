@@ -36,6 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _getUsbDevices();
     flutterTts.setLanguage("ja-JP");
+    flutterTts.setSpeechRate(0.4);
   }
 
   Future<void> _getUsbDevices() async {
@@ -92,36 +93,43 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Map<String, int>? parseDuration(String milliseconds) {
+    final msText = int.tryParse(milliseconds);
+    if (msText == null) {
+      return null;
+    }
+    return {
+      "min": (msText ~/ 60000),
+      "sec": (msText % 60000) ~/ 1000,
+      "ms": msText % 1000
+    };
+  }
+
   String formatDuration(String milliseconds) {
-    final ms = int.tryParse(milliseconds);
-    if (ms == null) {
+    var duration = parseDuration(milliseconds);
+    if (duration == null) {
       return "";
     }
-    int minutes = (ms ~/ 60000);
-    int seconds = (ms % 60000) ~/ 1000;
-    int millis = ms % 1000;
 
-    String minutesStr = minutes.toString().padLeft(2, '0');
-    String secondsStr = seconds.toString().padLeft(2, '0');
-    String millisStr = millis.toString().padLeft(3, '0');
+    String minutesStr = duration["min"].toString().padLeft(2, '0');
+    String secondsStr = duration["sec"].toString().padLeft(2, '0');
+    String millisStr = duration["ms"].toString().padLeft(3, '0');
 
-    return "$minutesStr:$secondsStr:$millisStr";
+    return "$minutesStr:$secondsStr.$millisStr";
   }
 
   String formatDurationToSpeak(String milliseconds) {
-    final ms = int.tryParse(milliseconds);
-    if (ms == null) {
+    var duration = parseDuration(milliseconds);
+    if (duration == null) {
       return "";
     }
-    int minutes = (ms ~/ 60000);
-    int seconds = (ms % 60000) ~/ 1000;
-    int millis = ms % 1000;
 
-    String minutesStr = minutes.toString().padLeft(2, '0');
-    String secondsStr = seconds.toString().padLeft(2, '0');
-    String millisStr = millis.toString().padLeft(3, '0');
+    String minutesStr =
+        duration["min"] == 0 ? "" : '${duration["min"].toString()}分';
+    String secondsStr = duration["sec"].toString();
+    String millisStr = duration["ms"].toString().padLeft(3, '0');
 
-    return '$minutesStr分 $secondsStr秒 $millisStr';
+    return '$minutesStr $secondsStr秒 $millisStr';
   }
 
   Future _speak(String ms) async {

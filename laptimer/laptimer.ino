@@ -31,8 +31,8 @@ void loop()
     Serial.print(",");
     Serial.println(distance);
     startTime = millis();
-    delay(500);
+    delay(3000);
   }
 
-  delay(100); // 0.5秒待つ
+  delay(100); // 0.1秒待つ
 }
