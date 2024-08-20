@@ -30,35 +30,45 @@ class _MyHomePageState extends State<MyHomePage> {
   String _ms = "";
   String _distance = "";
   String _message = "データを待っています...";
-  FlutterTts flutterTts = FlutterTts();
+  final FlutterTts _flutterTts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
-    _checkIfEmulator();
+    _initialize();
   }
 
-  Future<void> _checkIfEmulator() async {
+  Future<void> _initialize() async {
+    if (await _isEmulator()) {
+      _initializeEmulator();
+    } else {
+      _initializeRealDevice();
+    }
+  }
+
+  void _initializeEmulator() {
+    setState(() {
+      _ms = "5999999"; // 99:59.999
+      _distance = "9999";
+      _message = "";
+    });
+  }
+
+  void _initializeRealDevice() {
+    _flutterTts.setLanguage("ja-JP");
+    _flutterTts.setSpeechRate(0.4);
+    UsbSerial.usbEventStream?.listen((UsbEvent event) {
+      if (event.event == UsbEvent.ACTION_USB_ATTACHED ||
+          event.event == UsbEvent.ACTION_USB_DETACHED) {
+        _getUsbDevices();
+      }
+    });
+  }
+
+  Future<bool> _isEmulator() async {
     final info = DeviceInfoPlugin();
     final androidInfo = await info.androidInfo;
-    final isEmulator = !androidInfo.isPhysicalDevice;
-    if (isEmulator) {
-      setState(() {
-        _ms = "5999999"; // 99:59.999
-        _distance = "9999";
-        _message = "";
-      });
-    } else {
-      flutterTts.setLanguage("ja-JP");
-      flutterTts.setSpeechRate(0.4);
-      // デバイスの接続を監視
-      UsbSerial.usbEventStream?.listen((UsbEvent event) {
-        if (event.event == UsbEvent.ACTION_USB_ATTACHED ||
-            event.event == UsbEvent.ACTION_USB_DETACHED) {
-          _getUsbDevices();
-        }
-      });
-    }
+    return !androidInfo.isPhysicalDevice;
   }
 
   Future<void> _getUsbDevices() async {
@@ -67,9 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
       UsbDevice device = devices[0];
       _connectToDevice(device);
     } else {
-      setState(() {
-        _message = "USB デバイスへのアクセスが許可されていません";
-      });
+      _setUsbConnectionError();
     }
   }
 
@@ -77,16 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
     _port = await device.create();
     final port = _port;
     if (port == null) {
-      setState(() {
-        _message = "デバイスがありません";
-      });
+      _setUsbConnectionError();
       return;
     }
     bool openResult = await port.open();
     if (!openResult) {
-      setState(() {
-        _message = "デバイスに接続できませんでした";
-      });
+      _setUsbConnectionError();
       return;
     }
 
@@ -115,20 +119,20 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Map<String, int>? parseDuration(String milliseconds) {
-    final msText = int.tryParse(milliseconds);
-    if (msText == null) {
+  Map<String, int>? _parseDuration(String milliseconds) {
+    final msValue = int.tryParse(milliseconds);
+    if (msValue == null) {
       return null;
     }
     return {
-      "min": (msText ~/ 60000),
-      "sec": (msText % 60000) ~/ 1000,
-      "ms": msText % 1000
+      "min": (msValue ~/ 60000),
+      "sec": (msValue % 60000) ~/ 1000,
+      "ms": msValue % 1000
     };
   }
 
-  String formatDuration(String milliseconds) {
-    var duration = parseDuration(milliseconds);
+  String _formatDuration(String milliseconds) {
+    var duration = _parseDuration(milliseconds);
     if (duration == null) {
       return "";
     }
@@ -140,8 +144,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return "$minutesStr:$secondsStr.$millisStr";
   }
 
-  String formatDurationToSpeak(String milliseconds) {
-    var duration = parseDuration(milliseconds);
+  String _formatDurationToSpeak(String milliseconds) {
+    var duration = _parseDuration(milliseconds);
     if (duration == null) {
       return "";
     }
@@ -154,9 +158,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return '$minutesStr $secondsStr秒 $millisStr';
   }
 
+  void _setUsbConnectionError() {
+    setState(() {
+      _message = "USBデバイスに接続できません";
+    });
+  }
+
   Future _speak(String ms) async {
-    var japaneseTime = formatDurationToSpeak(ms);
-    await flutterTts.speak(japaneseTime);
+    var japaneseTime = _formatDurationToSpeak(ms);
+    await _flutterTts.speak(japaneseTime);
   }
 
   @override
@@ -176,7 +186,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.center, // 水平方向の中央配置
                 children: <Widget>[
                     Text(
-                      formatDuration(_ms),
+                      _formatDuration(_ms),
                       style: TextStyle(fontSize: 144, color: Colors.white),
                     ),
                     Text(
