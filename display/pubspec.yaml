@@ -9,6 +9,7 @@ environment:
 # Add regular dependencies here.
 dependencies:
   # path: ^1.8.0
+  device_info_plus: ^10.1.2
   flutter:
     sdk: flutter
   flutter_test:

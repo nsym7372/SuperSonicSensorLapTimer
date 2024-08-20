@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:usb_serial/usb_serial.dart';
@@ -26,7 +27,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   UsbPort? _port;
   String _buffer = "";
-  String _time = "";
+  String _ms = "";
   String _distance = "";
   String _message = "データを待っています...";
   FlutterTts flutterTts = FlutterTts();
@@ -34,16 +35,30 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    flutterTts.setLanguage("ja-JP");
-    flutterTts.setSpeechRate(0.4);
+    _checkIfEmulator();
+  }
 
-    // デバイスの接続を監視
-    UsbSerial.usbEventStream?.listen((UsbEvent event) {
-      if (event.event == UsbEvent.ACTION_USB_ATTACHED ||
-          event.event == UsbEvent.ACTION_USB_DETACHED) {
-        _getUsbDevices();
-      }
-    });
+  Future<void> _checkIfEmulator() async {
+    final info = DeviceInfoPlugin();
+    final androidInfo = await info.androidInfo;
+    final isEmulator = !androidInfo.isPhysicalDevice;
+    if (isEmulator) {
+      setState(() {
+        _ms = "5999999"; // 99:59.999
+        _distance = "9999";
+        _message = "";
+      });
+    } else {
+      flutterTts.setLanguage("ja-JP");
+      flutterTts.setSpeechRate(0.4);
+      // デバイスの接続を監視
+      UsbSerial.usbEventStream?.listen((UsbEvent event) {
+        if (event.event == UsbEvent.ACTION_USB_ATTACHED ||
+            event.event == UsbEvent.ACTION_USB_DETACHED) {
+          _getUsbDevices();
+        }
+      });
+    }
   }
 
   Future<void> _getUsbDevices() async {
@@ -90,11 +105,11 @@ class _MyHomePageState extends State<MyHomePage> {
         final List<String> dataFromDevice =
             _buffer.replaceAll("\n", "").split(",");
         setState(() {
-          _time = dataFromDevice[0];
+          _ms = dataFromDevice[0];
           _distance = dataFromDevice[1];
           _message = "";
         });
-        _speak(_time);
+        _speak(_ms);
         _buffer = "";
       }
     });
@@ -161,7 +176,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.center, // 水平方向の中央配置
                 children: <Widget>[
                     Text(
-                      formatDuration(_time),
+                      formatDuration(_ms),
                       style: TextStyle(fontSize: 144, color: Colors.white),
                     ),
                     Text(
