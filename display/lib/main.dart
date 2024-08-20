@@ -104,19 +104,23 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     port.inputStream!.listen((Uint8List data) {
-      _buffer += String.fromCharCodes(data);
-      if (_buffer.contains("\n")) {
-        final List<String> dataFromDevice =
-            _buffer.replaceAll("\n", "").split(",");
-        setState(() {
-          _ms = dataFromDevice[0];
-          _distance = dataFromDevice[1];
-          _message = "";
-        });
-        _speak(_ms);
-        _buffer = "";
-      }
+      _receiveData(data);
     });
+  }
+
+  void _receiveData(Uint8List data) {
+    _buffer += String.fromCharCodes(data);
+    if (_buffer.contains("\n")) {
+      final List<String> dataFromDevice =
+          _buffer.replaceAll("\n", "").split(",");
+      setState(() {
+        _ms = dataFromDevice[0];
+        _distance = dataFromDevice[1];
+        _message = "";
+      });
+      _speak(_ms);
+      _buffer = "";
+    }
   }
 
   Map<String, int>? _parseDuration(String milliseconds) {
