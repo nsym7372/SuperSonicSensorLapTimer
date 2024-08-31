@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _ms = "";
   String _distance = "";
   String _message = "データを待っています...";
-  String _photo_message = "";
+  String _photoMessage = "";
   final FlutterTts _flutterTts = FlutterTts();
   CameraController? _cameraController;
 
@@ -206,11 +206,11 @@ class _MyHomePageState extends State<MyHomePage> {
       final Uint8List imageData = await pictrue.readAsBytes();
       final ret = await ImageGallerySaver.saveImage(imageData);
       setState(() {
-        _photo_message = 'Picture saved to $ret';
+        _photoMessage = 'Picture saved to $ret';
       });
     } catch (e) {
       setState(() {
-        _photo_message = 'Error taking picture: $e';
+        _photoMessage = 'Error taking picture: $e';
       });
     }
   }
@@ -218,6 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose() {
     _port?.close();
+    _cameraController?.dispose();
     super.dispose();
   }
 
@@ -240,8 +241,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       style: TextStyle(fontSize: 24, color: Colors.white),
                     ),
                     Text(
-                      "photo: $_photo_message",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      "photo: $_photoMessage",
+                      style: TextStyle(fontSize: 1, color: Colors.white),
                     ),
                   ])
             : Text(
