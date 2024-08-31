@@ -1,24 +1,38 @@
+import 'package:camera/camera.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:typed_data';
 
-void main() {
-  runApp(MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final cameras = await availableCameras();
+  final frontCamera = cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front);
+
+  runApp(MyApp(camera: frontCamera));
 }
 
 class MyApp extends StatelessWidget {
+  final CameraDescription camera;
+  const MyApp({super.key, required this.camera});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'USB Serial Example',
-      home: MyHomePage(),
+      home: MyHomePage(camera: camera),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  final CameraDescription camera;
+  const MyHomePage({required this.camera});
+
   @override
   // ignore: library_private_types_in_public_api
   _MyHomePageState createState() => _MyHomePageState();
@@ -30,7 +44,9 @@ class _MyHomePageState extends State<MyHomePage> {
   String _ms = "";
   String _distance = "";
   String _message = "データを待っています...";
+  String _photo_message = "";
   final FlutterTts _flutterTts = FlutterTts();
+  CameraController? _cameraController;
 
   @override
   void initState() {
@@ -54,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _initializeRealDevice() {
+  void _initializeRealDevice() async {
     _flutterTts.setLanguage("ja-JP");
     _flutterTts.setSpeechRate(0.4);
     UsbSerial.usbEventStream?.listen((UsbEvent event) {
@@ -63,6 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
         _getUsbDevices();
       }
     });
+
+    _cameraController = CameraController(widget.camera, ResolutionPreset.high);
+    await _cameraController!.initialize();
   }
 
   Future<bool> _isEmulator() async {
@@ -120,6 +139,8 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       _speak(_ms);
       _buffer = "";
+
+      _takePicture();
     }
   }
 
@@ -174,6 +195,26 @@ class _MyHomePageState extends State<MyHomePage> {
     await _flutterTts.speak(japaneseTime);
   }
 
+  Future<void> _takePicture() async {
+    if (!_cameraController!.value.isInitialized) {
+      return;
+    }
+
+    try {
+      await Future.delayed(Duration(milliseconds: 500));
+      final XFile pictrue = await _cameraController!.takePicture();
+      final Uint8List imageData = await pictrue.readAsBytes();
+      final ret = await ImageGallerySaver.saveImage(imageData);
+      setState(() {
+        _photo_message = 'Picture saved to $ret';
+      });
+    } catch (e) {
+      setState(() {
+        _photo_message = 'Error taking picture: $e';
+      });
+    }
+  }
+
   @override
   void dispose() {
     _port?.close();
@@ -197,6 +238,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     Text(
                       "distance: $_distance cm",
                       style: TextStyle(fontSize: 24, color: Colors.white),
+                    ),
+                    Text(
+                      "photo: $_photo_message",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ])
             : Text(

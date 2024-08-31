@@ -24,7 +24,7 @@ void loop()
   duration = pulseIn(echoPin, HIGH);
   distance = (duration / 2) / 29.1; // 距離をセンチメートルに変換
 
-  if (distance < 10)
+  if (distance < 50)
   {
     elapsedTime = millis() - startTime; // 経過時間を計算
     Serial.print(elapsedTime);
@@ -34,5 +34,5 @@ void loop()
     delay(3000);
   }
 
-  delay(100); // 0.1秒待つ
+  delay(100); // 信号が帰ってくるまで、200cmで最大55msぐらいかかる
 }
