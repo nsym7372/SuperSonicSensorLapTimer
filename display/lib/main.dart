@@ -157,7 +157,8 @@ class _MyHomePageState extends State<MyHomePage> {
     String minutesStr =
         duration["min"] == 0 ? "" : '${duration["min"].toString()}分';
     String secondsStr = duration["sec"].toString();
-    String millisStr = duration["ms"].toString().padLeft(3, '0');
+    String millisStr =
+        duration["ms"].toString().padLeft(3, '0').replaceAll("", " ");
 
     return '$minutesStr $secondsStr秒 $millisStr';
   }
